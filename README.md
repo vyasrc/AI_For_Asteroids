@@ -1,0 +1,2 @@
+# AI_For_Asteroids
+We aim to implement and use movement techniques and application of neural networks learned during the course to create a set of behaviors that can successfully play the game intelligently, which we define as achieving three main objectives: avoid collisions, gain power-ups, fire projectiles to score points. This will be accomplished by implementing and combining AI techniques. The goal of this project is evaluating which set of methods and parameters gives the best result, in terms of defined metrics.
