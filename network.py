@@ -2,7 +2,7 @@ import pygame
 import math
 import random
 import numpy as np
-import perfplot
+import sys
 
 pygame.init()
 
@@ -105,11 +105,11 @@ class Player(object):
         elif self.y > sh + 50:
             self.y = 0
 
-    def rotateShip(self, right):
+    def rotateShip(self, right, rangle):
 
         sign = 1 if right else -1
         # rot = math.pi * 2 / 180 * math.pi / 60 * sign
-        rot = 25 * sign
+        rot = rangle * sign
         self.angle += rot
         self.angle = self.angle % 360
         # if self.angle < 0:
@@ -170,8 +170,8 @@ class Asteroid(object):
             self.ydir = 1
         else:
             self.ydir = -1
-        self.xv = self.xdir * random.randrange(1, 3)
-        self.yv = self.ydir * random.randrange(1, 3)
+        self.xv = self.xdir * random.randrange(1, 2)
+        self.yv = self.ydir * random.randrange(1, 2)
 
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
@@ -320,6 +320,26 @@ class NeuralNetwork(object):
         self.bias1 = np.add(self.bias1, output_deltas)
         self.bias0 = np.add(self.bias0, hidden_deltas)
 
+    def save_model_weights(self):
+
+        # with open('weights', 'wb') as f:
+        np.savez('weights', self.bias0, self.bias1, self.weights0, self.weights1)
+
+    def test_initialization(self):
+
+        # with open('weights', 'rb') as f:
+        #     self.bias0 = np.load(f)
+        #     self.bias1 = np.laod(f)
+        #     self.weights0 = np.load(f)
+        #     self.weights1 = np.load(f)
+
+        npzfile = np.load('weights.npz')
+        # for arr in npzfile:
+        self.bias0 = npzfile['arr_0']
+        self.bias1 = npzfile['arr_1']
+        self.weights0 = npzfile['arr_2']
+        self.weights1 = npzfile['arr_3']
+
 
 def redrawGameWindow():
     win.blit(bg, (0, 0))
@@ -396,26 +416,32 @@ def normalise_input(ax, ay, sa, angle, ran):
 
 player = Player()
 nn = NeuralNetwork(4, 20, 1)
-for i in range(200000):
-    for j in range(1, 4):
-        # ran = random.choice([1, 2, 3])
-        ran = j
-        ax = np.random.rand() * (sw + 50 * ran) - 50 * ran / 2
-        ay = np.random.rand() * (sh + 50 * ran) - 50 * ran / 2
+rangle = 30
+test = int(sys.argv[1])
+if test == 0:
+    for i in range(100000):
+        for j in range(1, 4):
+            # ran = random.choice([1, 2, 3])
+            ran = j
+            ax = np.random.rand() * (sw + 50 * ran) - 50 * ran / 2
+            ay = np.random.rand() * (sh + 50 * ran) - 50 * ran / 2
 
-        sa = np.random.rand() * math.pi * 2
-        angle = angle_to_point(player.x, player.y, sa, ax, ay)
-        direction = 0 if angle > math.pi else 1
+            sa = np.random.rand() * math.pi * 2
+            angle = angle_to_point(player.x, player.y, sa, ax, ay)
+            direction = 0 if angle > math.pi else 1
 
-        nn.train(normalise_input(ax, ay, sa, angle, ran), [direction])
+            nn.train(normalise_input(ax, ay, sa, angle, ran), [direction])
+    nn.save_model_weights()
+else:
+    nn.test_initialization()
 
 playerBullets = []
 asteroids = []
 count = 0
 # stars = []
 rand_dir = random.choice([True, False])
-aliens = []
-alienBullets = []
+# aliens = []
+# alienBullets = []
 run = True
 # d_left = d_right = 0
 while run:
@@ -587,13 +613,13 @@ while run:
                 d_right = abs(predict - 1)
                 # print(d_left, d_right)
                 if d_left < 0.1:
-                    player.rotateShip(False)
+                    player.rotateShip(False, rangle)
                     if count % 12 == 0:
                         playerBullets.append(Bullet())
                         if isSoundOn:
                             shoot.play()
                 elif d_right < 0.1:
-                    player.rotateShip(True)
+                    player.rotateShip(True, rangle)
                     if count % 12 == 0:
                         playerBullets.append(Bullet())
                         if isSoundOn:
