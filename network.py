@@ -414,8 +414,8 @@ asteroids = []
 count = 0
 # stars = []
 rand_dir = random.choice([True, False])
-# aliens = []
-# alienBullets = []
+aliens = []
+alienBullets = []
 run = True
 # d_left = d_right = 0
 while run:
