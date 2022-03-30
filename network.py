@@ -2,7 +2,8 @@ import pygame
 import math
 import random
 import numpy as np
-import sys
+from sys import argv
+from time import time
 
 pygame.init()
 
@@ -417,8 +418,8 @@ def normalise_input(ax, ay, sa, angle, ran):
 player = Player()
 nn = NeuralNetwork(4, 20, 1)
 rangle = 30
-test = int(sys.argv[1])
-if test == 0:
+mode = argv[1]
+if mode == "TRAIN":
     for i in range(100000):
         for j in range(1, 4):
             # ran = random.choice([1, 2, 3])
@@ -432,7 +433,7 @@ if test == 0:
 
             nn.train(normalise_input(ax, ay, sa, angle, ran), [direction])
     nn.save_model_weights()
-else:
+elif mode == "TEST":
     nn.test_initialization()
 
 playerBullets = []
@@ -444,6 +445,11 @@ rand_dir = random.choice([True, False])
 # alienBullets = []
 run = True
 # d_left = d_right = 0
+start = time()
+time_list = []
+score_list = []
+destroyed_asteroids = {}
+# stats = True
 while run:
     clock.tick(60)
     count += 1
@@ -513,6 +519,10 @@ while run:
                             if isSoundOn:
                                 bangLargeSound.play()
                             score += 10
+                            if 3 in destroyed_asteroids:
+                                destroyed_asteroids[3] += 1
+                            else:
+                                destroyed_asteroids[3] = 1
                             na1 = Asteroid(2)
                             na2 = Asteroid(2)
                             na1.x = a.x
@@ -525,6 +535,10 @@ while run:
                             if isSoundOn:
                                 bangSmallSound.play()
                             score += 20
+                            if 2 in destroyed_asteroids:
+                                destroyed_asteroids[2] += 1
+                            else:
+                                destroyed_asteroids[2] = 1
                             na1 = Asteroid(1)
                             na2 = Asteroid(1)
                             na1.x = a.x
@@ -535,6 +549,10 @@ while run:
                             asteroids.append(na2)
                         else:
                             score += 30
+                            if 1 in destroyed_asteroids:
+                                destroyed_asteroids[1] += 1
+                            else:
+                                destroyed_asteroids[1] = 1
                             if isSoundOn:
                                 bangSmallSound.play()
                         asteroids.pop(asteroids.index(a))
@@ -562,21 +580,29 @@ while run:
 
         if lives <= 0:
             gameover = True
+            end = time()
+            time_list.append(end - start)
+            score_list.append(score)
+            print(f'Average Time over {len(time_list)} iterations: {sum(time_list) / len(time_list)}')
+            print(f'Average Score over {len(score_list)} iterations: {sum(score_list) / len(score_list)}')
+            print(f'Average Asteroids over {len(score_list)} iterations:')
+            for key in destroyed_asteroids.keys():
+                print(f'Rank {key} Asteroids: {round(destroyed_asteroids[key] / len(score_list))}')
 
         if rfStart != -1:
             if count - rfStart > 500:
                 rapidFire = False
                 rfStart = -1
 
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            player.turnLeft()
-        if keys[pygame.K_RIGHT]:
-            player.turnRight()
-        if keys[pygame.K_UP]:
-            player.moveForward()
-        if keys[pygame.K_DOWN]:
-            player.moveBackward()
+        # keys = pygame.key.get_pressed()
+        # if keys[pygame.K_LEFT]:
+        #     player.turnLeft()
+        # if keys[pygame.K_RIGHT]:
+        #     player.turnRight()
+        # if keys[pygame.K_UP]:
+        #     player.moveForward()
+        # if keys[pygame.K_DOWN]:
+        #     player.moveBackward()
         # if keys[pygame.K_SPACE]:
         #     if rapidFire:
         #         playerBullets.append(Bullet())
@@ -660,6 +686,7 @@ while run:
                     if score > highScore:
                         highScore = score
                     score = 0
+                    start = time()
 
     redrawGameWindow()
 pygame.quit()
