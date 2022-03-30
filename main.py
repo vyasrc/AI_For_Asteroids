@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import pygame.math as pymath
 
 pygame.init()
 
@@ -34,6 +35,33 @@ rfStart = -1
 isSoundOn = True
 highScore = 0
 
+class SteeringData(object):
+    def __init__(self):
+        self.linear = pymath.Vector2()
+        self.angular = float()
+
+class Kinematic(object):
+    maxVel = 30.0
+    maxRot = 50.0
+    def __init__(self, pos, vel, orientation):
+        self.pos = pos
+        self.vel = vel
+        self.orientation = orientation
+    
+    def update(self, steering, time):
+        self.pos += self.vel * time;
+        self.orientation += self.rot * time
+        self.vel += steering.linear * time
+        self.rot += steering.angular * time
+        self.rot = abs(self.rot)
+        if(self.vel.length() > self.maxVel):
+            self.vel = self.vel.normalize * self.maxVel
+        if(self.rot > self.maxRot):
+            self.rot = self.maxRot
+    
+    def move(self, time):
+        self.pos *= self.vel * time
+        self.orientation *= self.rot * time
 
 class Player(object):
     def __init__(self):
@@ -177,7 +205,7 @@ class Star(object):
         self.img = star
         self.w = self.img.get_width()
         self.h = self.img.get_height()
-        self.ranPoint = random.choice([(random.randrange(0, sw - self.w), random.choice([0, sh - self.h]))])
+        self.ranPoint = random.choice([(random.randrange(0, sw - self.w), random.randrange(0, sh - self.h))])
         # print(self.ranPoint)
         self.x, self.y = self.ranPoint
         # if self.x < sw // 2:
@@ -277,7 +305,7 @@ def collision_avoidance():
     for asteroid in asteroids:
         # print(distance(player.x, player.y, asteroid.x, asteroid.y))
         if distance(player.x, player.y, asteroid.x, asteroid.y) < 100:
-            # print("Asteroid Nearby")
+            print("Asteroid Nearby")
             if asteroid.xv > 0 and asteroid.yv > 0:
                 player.turnRight()
                 player.moveForward()
@@ -291,8 +319,10 @@ def collision_avoidance():
                 player.turnRight()
                 player.moveForward()
 
-# def collect_power_up():
-#     if stars:
+def collect_power_up():
+    if stars:
+        for star in stars:
+            print(f'{star.x} {star.y}')
 
 player = Player()
 playerBullets = []
@@ -343,7 +373,7 @@ while run:
         #             break
 
         collision_avoidance()
-        # collect_power_up()
+        collect_power_up()
         player.updateLocation()
         # for asteroid in asteroids:
         #     if asteroid.checkLocation():
@@ -358,15 +388,15 @@ while run:
             a.x += a.xv
             a.y += a.yv
             # print(a.xv, a.yv)
-            if (player.x - player.w // 2 <= a.x <= player.x + player.w // 2) or (
-                    player.x + player.w // 2 >= a.x + a.w >= player.x - player.w // 2):
-                if (player.y - player.h // 2 <= a.y <= player.y + player.h // 2) or (
-                        player.y - player.h // 2 <= a.y + a.h <= player.y + player.h // 2):
-                    lives -= 1
-                    asteroids.pop(asteroids.index(a))
-                    if isSoundOn:
-                        bangLargeSound.play()
-                    break
+            # if (player.x - player.w // 2 <= a.x <= player.x + player.w // 2) or (
+            #         player.x + player.w // 2 >= a.x + a.w >= player.x - player.w // 2):
+            #     if (player.y - player.h // 2 <= a.y <= player.y + player.h // 2) or (
+            #             player.y - player.h // 2 <= a.y + a.h <= player.y + player.h // 2):
+            #         lives -= 1
+            #         asteroids.pop(asteroids.index(a))
+            #         if isSoundOn:
+            #             bangLargeSound.play()
+            #         break
 
             # bullet collision
             for b in playerBullets:
