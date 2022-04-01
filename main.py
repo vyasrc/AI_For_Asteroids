@@ -2,6 +2,8 @@ import pygame
 import math
 import random
 import pygame.math as pymath
+from time import time
+from sys import argv
 
 pygame.init()
 
@@ -35,33 +37,126 @@ rfStart = -1
 isSoundOn = True
 highScore = 0
 
+
 class SteeringData(object):
     def __init__(self):
         self.linear = pymath.Vector2()
         self.angular = float()
 
+
 class Kinematic(object):
     maxVel = 30.0
     maxRot = 50.0
-    def __init__(self, pos, vel, orientation):
-        self.pos = pos
-        self.vel = vel
+
+    def __init__(self, position, orientation):
+        self.position = position
+        self.velocity = pymath.Vector2(0, 0)
         self.orientation = orientation
+        self.rotation = 0.0
     
     def update(self, steering, time):
-        self.pos += self.vel * time;
-        self.orientation += self.rot * time
-        self.vel += steering.linear * time
-        self.rot += steering.angular * time
-        self.rot = abs(self.rot)
-        if(self.vel.length() > self.maxVel):
-            self.vel = self.vel.normalize * self.maxVel
-        if(self.rot > self.maxRot):
-            self.rot = self.maxRot
-    
-    def move(self, time):
-        self.pos *= self.vel * time
-        self.orientation *= self.rot * time
+        self.position += self.velocity * time
+        self.orientation += self.rotation * time
+
+        self.velocity = steering.linear
+        self.rotation = steering.angular
+    #
+    # def move(self, time):
+    #     self.pos *= self.vel * time
+    #     self.orientation *= self.rot * time
+
+
+class SteeringBehavior(object):
+
+    def calculate_acceleration(self, character, goal):
+        pass
+
+
+class Position(SteeringBehavior):
+
+    def __init__(self):
+        self.speed = 1.0
+        self.acc = 1.0
+        self.radius = 0.3
+        self.targetSpeed = 0.0
+        self.direction = pymath.Vector2()
+        self.targetVelocity = pymath.Vector2()
+
+    def calculate_acceleration(self, character, goal):
+
+        result = SteeringData()
+
+        self.direction = goal.position - character.position
+
+        distance = self.direction.length()
+
+        if distance > self.radius:
+            self.targetSpeed = self.speed
+        else:
+            self.targetSpeed = self.speed * distance / self.radius
+
+        self.targetVelocity = self.direction
+        self.targetVelocity.normalize()
+        self.targetVelocity *= self.speed
+
+        result.linear = self.targetVelocity - character.velocity
+
+        if result.linear.length() > self.acc:
+            result.linear.normalize()
+            result.linear *= self.acc
+
+        result.angular = 0
+
+        return result
+
+
+class Orientation(SteeringBehavior):
+
+    def __init__(self):
+        self.acc = 100.0
+        self.radius = 5.0
+        self.targetRotation = 0.0
+        self.rotationSize = 0.0
+        self.rotationSize = 0.0
+        self.maxRotation = 180.0
+
+    def calculate_acceleration(self, character, goal):
+
+        result = SteeringData()
+
+        rotation = goal.orientation - character.orientation
+
+        r = int(rotation) % 360
+
+        if abs(r) <= 180:
+            rotation = r
+        elif r > 180:
+            rotation = 360 - r
+        else:
+            rotation = r + 180
+
+        self.rotationSize = abs(rotation)
+
+        if self.rotationSize > self.radius:
+            self.targetRotation = self.maxRotation
+        else:
+            self.targetRotation = self.maxRotation * self.rotationSize / self.radius
+
+        if self.rotationSize == 0:
+            self.targetRotation += rotation
+        else:
+            self.targetRotation += rotation / self.rotationSize
+
+        result.angular = self.targetRotation - character.orientation
+
+        if abs(result.angular) > self.acc:
+            result.angular /= abs(result.angular)
+            result.angular *= self.acc
+
+        result.linear = pymath.Vector2(0, 0)
+
+        return result
+
 
 class Player(object):
     def __init__(self):
@@ -84,7 +179,7 @@ class Player(object):
 
     def turnLeft(self):
         self.angle += 2
-        print(self.angle)
+        # print(self.angle)
         self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
         self.rotatedRect = self.rotatedSurf.get_rect()
         self.rotatedRect.center = (self.x, self.y)
@@ -130,6 +225,12 @@ class Player(object):
             self.y = sh
         elif self.y > sh:
             self.y = 0
+
+    def updateValues(self, values):
+
+        self.angle = values.orientation
+        self.x = values.position.x
+        self.y = values.position.y
 
 
 class Bullet(object):
@@ -294,7 +395,7 @@ def redrawGameWindow():
     pygame.display.update()
 
 
-def distance(px, py, ax, ay):
+def collision_distance(px, py, ax, ay):
 
     return math.sqrt(math.pow(ax - px, 2) + math.pow(py - ay, 2))
 
@@ -302,10 +403,13 @@ def distance(px, py, ax, ay):
 def collision_avoidance():
     # print(len(asteroids))
     # print(player.x, player.y)
+
+    collision = False
+
     for asteroid in asteroids:
         # print(distance(player.x, player.y, asteroid.x, asteroid.y))
-        if distance(player.x, player.y, asteroid.x, asteroid.y) < 100:
-            print("Asteroid Nearby")
+        if collision_distance(player.x, player.y, asteroid.x, asteroid.y) < 100:
+            # print("Asteroid Nearby")
             if asteroid.xv > 0 and asteroid.yv > 0:
                 player.turnRight()
                 player.moveForward()
@@ -319,12 +423,37 @@ def collision_avoidance():
                 player.turnRight()
                 player.moveForward()
 
-def collect_power_up():
-    if stars:
-        for star in stars:
-            print(f'{star.x} {star.y}')
+            collision = True
+
+    return collision
+
+
+def collect_powerup(time_elapsed):
+    # result_position = SteeringData()
+    # result_orientation = SteeringData()
+
+    result_position = pos.calculate_acceleration(player_kinematic, star_kinematic)
+    result_orientation = orient.calculate_acceleration(player_kinematic, star_kinematic)
+    # print(resultPosition.linear)
+
+    if time_elapsed == 0:
+        time_elapsed = clock.get_rawtime()
+    if 0 < clock.get_rawtime() < 20:
+        time_elapsed = clock.get_rawtime()
+
+    player_kinematic.update(result_position, time_elapsed / 1000)
+    player_kinematic.update(result_orientation, time_elapsed / 1000)
+
+    if math.isnan(player_kinematic.orientation):
+        player_kinematic.orientation = 0
+    # print(player_kinematic.position)
+    player.updateValues(player_kinematic)
+
 
 player = Player()
+player_kinematic = Kinematic(pymath.Vector2(player.x, player.y), player.angle)
+pos = Position()
+orient = Orientation()
 playerBullets = []
 asteroids = []
 count = 0
@@ -332,16 +461,27 @@ stars = []
 rand_dir = random.choice([True, False])
 # aliens = []
 # alienBullets = []
+# collect_star = False
+timeElapsed = 0
 run = True
+start = time()
+time_list = []
+score_list = []
+destroyed_asteroids = {}
 while run:
-    clock.tick(60)
-    count += 1
+    clock.tick(100)
+
     if not gameover:
         if count % 50 == 0:
             ran = random.choice([1, 1, 1, 2, 2, 3])
             asteroids.append(Asteroid(ran))
-        if count % 1000 == 0:
+        if count % 1000 == 0 and stars == []:
             stars.append(Star())
+            # collect_star = True
+            theta = math.atan2(stars[-1].y - player.y, stars[-1].x - player.x)
+            deg = theta * 180 / 3.141592
+            # print(deg)
+            star_kinematic = Kinematic(pymath.Vector2(stars[-1].x, stars[-1].y), deg)
         # if count % 750 == 0:
         #     aliens.append(Alien())
         # for i, a in enumerate(aliens):
@@ -372,12 +512,9 @@ while run:
         #             alienBullets.pop(i)
         #             break
 
-        collision_avoidance()
-        collect_power_up()
+        collision_flag = collision_avoidance()
+
         player.updateLocation()
-        # for asteroid in asteroids:
-        #     if asteroid.checkLocation():
-        #         asteroids.remove(asteroid)
 
         for b in playerBullets:
             b.move()
@@ -388,15 +525,15 @@ while run:
             a.x += a.xv
             a.y += a.yv
             # print(a.xv, a.yv)
-            # if (player.x - player.w // 2 <= a.x <= player.x + player.w // 2) or (
-            #         player.x + player.w // 2 >= a.x + a.w >= player.x - player.w // 2):
-            #     if (player.y - player.h // 2 <= a.y <= player.y + player.h // 2) or (
-            #             player.y - player.h // 2 <= a.y + a.h <= player.y + player.h // 2):
-            #         lives -= 1
-            #         asteroids.pop(asteroids.index(a))
-            #         if isSoundOn:
-            #             bangLargeSound.play()
-            #         break
+            if (player.x - player.w // 2 <= a.x <= player.x + player.w // 2) or (
+                    player.x + player.w // 2 >= a.x + a.w >= player.x - player.w // 2):
+                if (player.y - player.h // 2 <= a.y <= player.y + player.h // 2) or (
+                        player.y - player.h // 2 <= a.y + a.h <= player.y + player.h // 2):
+                    lives -= 1
+                    asteroids.pop(asteroids.index(a))
+                    if isSoundOn:
+                        bangLargeSound.play()
+                    break
 
             # bullet collision
             for b in playerBullets:
@@ -406,6 +543,10 @@ while run:
                             if isSoundOn:
                                 bangLargeSound.play()
                             score += 10
+                            if 3 in destroyed_asteroids:
+                                destroyed_asteroids[3] += 1
+                            else:
+                                destroyed_asteroids[3] = 1
                             na1 = Asteroid(2)
                             na2 = Asteroid(2)
                             na1.x = a.x
@@ -418,6 +559,10 @@ while run:
                             if isSoundOn:
                                 bangSmallSound.play()
                             score += 20
+                            if 2 in destroyed_asteroids:
+                                destroyed_asteroids[2] += 1
+                            else:
+                                destroyed_asteroids[2] = 1
                             na1 = Asteroid(1)
                             na2 = Asteroid(1)
                             na1.x = a.x
@@ -428,6 +573,10 @@ while run:
                             asteroids.append(na2)
                         else:
                             score += 30
+                            if 1 in destroyed_asteroids:
+                                destroyed_asteroids[1] += 1
+                            else:
+                                destroyed_asteroids[1] = 1
                             if isSoundOn:
                                 bangSmallSound.play()
                         asteroids.pop(asteroids.index(a))
@@ -443,6 +592,14 @@ while run:
             # for b in playerBullets:
             #     if (s.x <= b.x <= s.x + s.w) or s.x <= b.x + b.w <= s.x + s.w:
             #         if (s.y <= b.y <= s.y + s.h) or s.y <= b.y + b.h <= s.y + s.h:
+
+            if argv[1] == 'ARBITRATION' and not collision_flag:
+                collect_powerup(timeElapsed)
+            elif argv[1] == 'BLENDING':
+                collect_powerup(timeElapsed)
+
+            # if count == 101:
+            #     gameover = True
             if (player.x - player.w // 2 <= s.x <= player.x + player.w // 2) or (
                     player.x + player.w // 2 >= s.x + s.w >= player.x - player.w // 2):
                 if (player.y - player.h // 2 <= s.y <= player.y + player.h // 2) or (
@@ -455,6 +612,14 @@ while run:
 
         if lives <= 0:
             gameover = True
+            end = time()
+            time_list.append(end - start)
+            score_list.append(score)
+            print(f'Average Time over {len(time_list)} iterations: {sum(time_list) / len(time_list)}')
+            print(f'Average Score over {len(score_list)} iterations: {sum(score_list) / len(score_list)}')
+            print(f'Average Asteroids over {len(score_list)} iterations:')
+            for key in destroyed_asteroids.keys():
+                print(f'Rank {key} Asteroids: {round(destroyed_asteroids[key] / len(score_list))}')
 
         if rfStart != -1:
             if count - rfStart > 500:
@@ -495,6 +660,8 @@ while run:
                     if isSoundOn:
                         shoot.play()
 
+    count += 1
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
@@ -518,6 +685,8 @@ while run:
                     if score > highScore:
                         highScore = score
                     score = 0
+                    count = 0
+                    start = time()
 
     redrawGameWindow()
 pygame.quit()

@@ -57,44 +57,44 @@ class Player(object):
         # win.blit(self.img, [self.x, self.y, self.w, self.h])
         win.blit(self.rotatedSurf, self.rotatedRect)
 
-    def turnLeft(self):
-        self.angle += 2
-        self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
-        self.rotatedRect = self.rotatedSurf.get_rect()
-        self.rotatedRect.center = (self.x, self.y)
-        self.cosine = math.cos(math.radians(self.angle + 90))
-        self.sine = math.sin(math.radians(self.angle + 90))
-        self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
-
-    def turnRight(self):
-        self.angle -= 2
-
-        self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
-        self.rotatedRect = self.rotatedSurf.get_rect()
-        self.rotatedRect.center = (self.x, self.y)
-        self.cosine = math.cos(math.radians(self.angle + 90))
-        self.sine = math.sin(math.radians(self.angle + 90))
-        self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
-
-    def moveForward(self):
-        self.x += self.cosine * 6
-        self.y -= self.sine * 6
-        self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
-        self.rotatedRect = self.rotatedSurf.get_rect()
-        self.rotatedRect.center = (self.x, self.y)
-        self.cosine = math.cos(math.radians(self.angle + 90))
-        self.sine = math.sin(math.radians(self.angle + 90))
-        self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
-
-    def moveBackward(self):
-        self.x -= self.cosine * 6
-        self.y += self.sine * 6
-        self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
-        self.rotatedRect = self.rotatedSurf.get_rect()
-        self.rotatedRect.center = (self.x, self.y)
-        self.cosine = math.cos(math.radians(self.angle + 90))
-        self.sine = math.sin(math.radians(self.angle + 90))
-        self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
+    # def turnLeft(self):
+    #     self.angle += 2
+    #     self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
+    #     self.rotatedRect = self.rotatedSurf.get_rect()
+    #     self.rotatedRect.center = (self.x, self.y)
+    #     self.cosine = math.cos(math.radians(self.angle + 90))
+    #     self.sine = math.sin(math.radians(self.angle + 90))
+    #     self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
+    #
+    # def turnRight(self):
+    #     self.angle -= 2
+    #
+    #     self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
+    #     self.rotatedRect = self.rotatedSurf.get_rect()
+    #     self.rotatedRect.center = (self.x, self.y)
+    #     self.cosine = math.cos(math.radians(self.angle + 90))
+    #     self.sine = math.sin(math.radians(self.angle + 90))
+    #     self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
+    #
+    # def moveForward(self):
+    #     self.x += self.cosine * 6
+    #     self.y -= self.sine * 6
+    #     self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
+    #     self.rotatedRect = self.rotatedSurf.get_rect()
+    #     self.rotatedRect.center = (self.x, self.y)
+    #     self.cosine = math.cos(math.radians(self.angle + 90))
+    #     self.sine = math.sin(math.radians(self.angle + 90))
+    #     self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
+    #
+    # def moveBackward(self):
+    #     self.x -= self.cosine * 6
+    #     self.y += self.sine * 6
+    #     self.rotatedSurf = pygame.transform.rotate(self.img, self.angle)
+    #     self.rotatedRect = self.rotatedSurf.get_rect()
+    #     self.rotatedRect.center = (self.x, self.y)
+    #     self.cosine = math.cos(math.radians(self.angle + 90))
+    #     self.sine = math.sin(math.radians(self.angle + 90))
+    #     self.head = (self.x + self.cosine * self.w // 2, self.y - self.sine * self.h // 2)
 
     def updateLocation(self):
         if self.x > sw + 50:
@@ -589,10 +589,10 @@ while run:
             for key in destroyed_asteroids.keys():
                 print(f'Rank {key} Asteroids: {round(destroyed_asteroids[key] / len(score_list))}')
 
-        if rfStart != -1:
-            if count - rfStart > 500:
-                rapidFire = False
-                rfStart = -1
+        # if rfStart != -1:
+        #     if count - rfStart > 500:
+        #         rapidFire = False
+        #         rfStart = -1
 
         # keys = pygame.key.get_pressed()
         # if keys[pygame.K_LEFT]:
