@@ -649,13 +649,13 @@ while run:
             else:
                 player.turnRight()
             if rapidFire:
-                if count % 12 == 0:
+                if count % 11 == 0:
                     playerBullets.append(Bullet())
                     # print(clock.get_time())
                     if isSoundOn:
                         shoot.play()
             else:
-                if count % 24 == 0:
+                if count % 22 == 0:
                     playerBullets.append(Bullet())
                     if isSoundOn:
                         shoot.play()
