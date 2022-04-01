@@ -475,7 +475,7 @@ while run:
         if count % 50 == 0:
             ran = random.choice([1, 1, 1, 2, 2, 3])
             asteroids.append(Asteroid(ran))
-        if count % 1000 == 0 and stars == []:
+        if count % 1000 == 0 and stars == [] and not rapidFire:
             stars.append(Star())
             # collect_star = True
             theta = math.atan2(stars[-1].y - player.y, stars[-1].x - player.x)
@@ -687,6 +687,8 @@ while run:
                     score = 0
                     count = 0
                     start = time()
+                    rapidFire = False
+                    rfStart = -1
 
     redrawGameWindow()
 pygame.quit()
