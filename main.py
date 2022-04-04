@@ -428,34 +428,6 @@ def collision_avoidance():
     return collision
 
 
-def collision_avoidance():
-    # print(len(asteroids))
-    # print(player.x, player.y)
-
-    collision = False
-
-    for asteroid in asteroids:
-        # print(distance(player.x, player.y, asteroid.x, asteroid.y))
-        if collision_distance(player.x, player.y, asteroid.x, asteroid.y) < 100:
-            # print("Asteroid Nearby")
-            if asteroid.xv > 0 and asteroid.yv > 0:
-                player.turnRight()
-                player.moveForward()
-            elif asteroid.xv > 0 and asteroid.yv < 0:
-                player.turnLeft()
-                player.moveForward()
-            elif asteroid.xv < 0 and asteroid.yv > 0:
-                player.turnLeft()
-                player.moveForward()
-            else:
-                player.turnRight()
-                player.moveForward()
-
-            collision = True
-
-    return collision
-
-
 def collect_powerup(time_elapsed):
     # result_position = SteeringData()
     # result_orientation = SteeringData()
