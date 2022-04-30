@@ -542,7 +542,7 @@ while run:
             #             bangLargeSound.play()
             #         break
             if (collision_distance(player.x, player.y, a.x + a.w//2, a.y + a.h//2) < a.w//2):
-                # lives -= 1
+                lives -= 1
                 asteroids.pop(asteroids.index(a))
                 if isSoundOn:
                     bangLargeSound.play()
